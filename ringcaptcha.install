@@ -1,0 +1,57 @@
+<?php
+/**
+ * @file
+ * Install and uninstall functions for the RingCaptcha module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ringcaptcha_install() {
+  $t = get_t();
+  drupal_set_message($t("RingCaptcha module settings are available under !link", 
+    array( '!link' => l($t('Administer > Site configuration > RingCaptcha'),  'admin/config/system/ringcaptcha'))
+  ));
+}
+
+/**
+ * Implements hook_install().
+ */
+function ringcaptcha_uninstall() {
+  // Remove all the RingCaptcha variables.
+  variable_del('ringcaptcha_appkey');
+  variable_del('ringcaptcha_secretkey');
+  variable_del('ringcaptcha_require_ssl');
+  variable_del('ringcaptcha_registration_form');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function ringcaptcha_requirements($phase) {
+  
+  $requirements = array();
+  if ($phase == 'runtime') {
+    // Ensure translations do not break at install time
+    $t = get_t();
+    $requirements['ringcaptcha']['title'] = $t('RingCaptcha library');
+    
+    if (module_exists('libraries') && function_exists('libraries_detect')) {
+      $library = libraries_detect(RINGCAPTCHA_LIBRARY);
+      $ringcaptcha_installed = ($library['installed']) ? TRUE : FALSE;
+    }
+    else {
+      $ringcaptcha_installed = FALSE;
+    }
+    if ($ringcaptcha_installed) {
+      $requirements['ringcaptcha']['value'] = $t('Installed API version !version', array('!version' => $library['version']));
+      $requirements['ringcaptcha']['severity'] = REQUIREMENT_OK;
+    }
+    else {
+      $requirements['ringcaptcha']['value'] = $t('Not installed');
+      $requirements['ringcaptcha']['severity'] = REQUIREMENT_ERROR;
+      $requirements['ringcaptcha']['description'] = $t('Please download the RingCaptcha PHP library from !link.', array('!link' => l('https://bitbucket.org/ringcaptcha/ringcaptcha-php/src', 'https://bitbucket.org/ringcaptcha/ringcaptcha-php/src')));
+    }
+  }
+  return $requirements;
+}

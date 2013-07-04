@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * Define constants for RingCaptcha
+ */
+define('RINGCAPTCHA_LIBRARY', 'ringcaptcha');
+define('RINGCAPTCHA_API_VERSION', '1.0');
+
+/**
+ * Implements hook_menu().
+ */
+function ringcaptcha_menu() {
+  
+  $items['admin/config/system/ringcaptcha'] = array(
+    'title' => 'RingCaptcha',
+    'description' => 'Administer your RingCaptcha settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ringcaptcha_admin_form'),
+    'access arguments' => array('access administration pages'),
+    'file' => 'ringcaptcha.admin.inc',
+  );
+  $items['admin/config/system/ringcaptcha/settings'] = array(
+    'title' => 'RingCaptcha Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  
+  return $items;
+  
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function ringcaptcha_libraries_info() {
+  $libraries['ringcaptcha'] = array(
+    'name' => 'RingCaptcha library',
+    'vendor url' => 'http://ringcaptcha.com',
+    'download url' => 'https://bitbucket.org/ringcaptcha/ringcaptcha-php/downloads',
+    'path' => 'lib',
+    'version' => '1.0',
+    'files' => array(
+      'php' => array(
+        'Ringcaptcha.php',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_FORMID_form_alter().
+ */
+function ringcaptcha_form_user_register_form_alter(&$form, &$form_state, $form_id) {
+  
+  if (variable_get('ringcaptcha_registration_form', 1)) {
+    
+      $markup_widget = '<script type="text/javascript" charset="UTF-8" src="http://api.ringcaptcha.com/widget/' . variable_get('ringcaptcha_appkey') . '"></script>';
+      $form['#attributes']['class'][] = 'ringcaptcha-form';
+      $form['#attached']['css'] = array(drupal_get_path('module', 'ringcaptcha') . '/ringcaptcha.css');
+      
+     // Add RingCaptcha widget to user register form for validation.
+      $form['ringcaptcha'] = array(
+        '#markup' => $markup_widget,
+        '#prefix' => '<div class="ringcaptcha form-wrapper">',
+        '#suffix' => '</div>',  
+      );      
+      
+      // Add validation TODO
+      $form['#validate'][] = 'ringcaptcha_register_validate';
+      $form['#submit'][] = 'ringcaptcha_register_submit';
+  } 
+  
+  dpm($form);
+  
+}
+
+/**
+ * Custom validation function for phone numbers during registration.
+ */
+function ringcaptcha_register_validate(&$form, &$form_state) {
+  
+    if (($library = libraries_load(RINGCAPTCHA_LIBRARY)) && !empty($library['loaded'])) {
+      $appKey = variable_get('ringcaptcha_appkey'); 
+      $secretKey = variable_get('ringcaptcha_secretkey');
+      
+      $ringcaptcha = new Ringcaptcha($appKey, $secretKey);
+      
+      if (variable_get('ringcaptcha_require_ssl') === 1) {
+         $require_ssl = TRUE; 
+      } 
+      else {
+         $require_ssl = FALSE; 
+      }
+      
+      $ringcaptcha->setSecure($require_ssl);
+
+      $ringcaptchaPinCode = $_POST["ringcaptcha_pin_code"];
+      $ringcaptchaToken   = $_POST["ringcaptcha_session_id"];
+      
+       if ($ringcaptcha->isValid($ringcaptchaPinCode,  $ringcaptchaToken)) {
+         // Successful verification flow.
+         $user_phone = $ringcaptcha->getPhoneNumber();  //retrieve phone number
+         $geo_located = $ringcaptcha->isGeoLocated(); //retrieve whether its been geo located or not
+         $id = $ringcaptcha->getId(); //retrieve and store transaction id for reconciliation purposes
+         drupal_set_message("Success", 'status');
+      } 
+      else {
+        drupal_set_message("RingCaptcha verification failed. Reason: " . $ringcaptcha->getMessage(), 'error');
+        $form['actions']['submit']['#disabled'] = FALSE;  
+      }
+    }
+}
+
+/**
+ * Custom submit handler for RingCaptcha during registration.
+ */
+function ringcaptcha_register_submit($form, &$form_state) {
+  // TODO
+}

@@ -1,0 +1,6 @@
+name = RingCaptcha
+description = Integration of RingCaptcha phone verification for developer into Drupal
+core = 7.x
+package = Custom
+
+dependencies[] = libraries
