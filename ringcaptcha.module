@@ -274,24 +274,4 @@ function ringcaptcha_verify_number($number, $return_user = FALSE) {
   return FALSE;
 }
 
-/**
- * Custom validation function for Mobile phone numbers during registration.
- */
-function ringcaptcha_register_validate($form, &$form_state) {
-  if (!ringcaptcha_validate_number($form_state['values']['number'])) {
-    form_set_error('number', t('You must enter a valid Mobile phone number'));
-  }
-  elseif (ringcaptcha_verify_number($form_state['values']['number'])) {
-    form_set_error('number', t('This number is already in use and cannot be assigned to more than one account'));
-  }
-}
-
-/**
- * Custom submit handler for phone numbers during registration.
- */
-function ringcaptcha_register_submit($form, &$form_state) {
-  $account = user_load($form_state['values']['uid']);
-  ringcaptcha_user_send_confirmation($account, $form_state['values']['number']);
-}
-
 
