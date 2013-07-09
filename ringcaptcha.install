@@ -25,6 +25,35 @@ function ringcaptcha_uninstall() {
   variable_del('ringcaptcha_registration_form');
 }
 
+
+/**
+ * Implements hook_schema().
+ */
+function ringcaptcha_schema() {
+  $schema['ringcaptcha_user'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'number' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 32,
+      ),
+      'status' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('number'),
+    'indexes' => array('uid' => array('uid')),
+  );
+  return $schema;
+}
+
 /**
  * Implements hook_requirements().
  */
