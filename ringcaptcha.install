@@ -9,9 +9,9 @@
  */
 function ringcaptcha_install() {
   $t = get_t();
-  drupal_set_message($t("RingCaptcha module settings are available under !link", 
-    array( '!link' => l($t('Administer > Site configuration > RingCaptcha'),  'admin/config/system/ringcaptcha'))
-  ));
+  variable_set('ringcaptcha_require_ssl', 1);
+  variable_set('ringcaptcha_registration_form', 0);
+  drupal_set_message($t("RingCaptcha module settings are available in admin/config/system/ringcaptcha"), 'status');
 }
 
 /**

@@ -18,7 +18,7 @@ function ringcaptcha_menu() {
     'description' => 'Administer your RingCaptcha settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('ringcaptcha_admin_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer ringcaptcha'),
     'file' => 'ringcaptcha.admin.inc',
   );
   $items['admin/config/system/ringcaptcha/settings'] = array(
@@ -36,9 +36,13 @@ function ringcaptcha_menu() {
  */
 function ringcaptcha_permission() {
   return array(
+    'administer ringcaptcha' => array(
+      'title' => t('Administer RingCaptcha'),
+      'description' => t('Administer and modify RingCaptcha settings'),
+    ),
     'edit own mobile phone number' => array(
       'title' => t('Edit own Mobile phone number'),
-      'description' => t('Here you can edit and re-validate your mobile phone number'),
+      'description' => t('Allow users to edit and re-validate their mobile phone number'),
     ),
   );
 }
@@ -75,8 +79,8 @@ function ringcaptcha_libraries_info() {
  */
 function ringcaptcha_form_user_register_form_alter(&$form, &$form_state, $form_id) {
   
-  if (variable_get('ringcaptcha_registration_form', 1)) {
-    
+  if (variable_get('ringcaptcha_registration_form') == 1) {
+      
       $markup_widget = '<script type="text/javascript" charset="UTF-8" src="http://api.ringcaptcha.com/widget/' . variable_get('ringcaptcha_appkey') . '"></script>';
       $form['#attributes']['class'][] = 'ringcaptcha-form';
       $form['#attached']['css'] = array(drupal_get_path('module', 'ringcaptcha') . '/ringcaptcha.css');
@@ -87,14 +91,11 @@ function ringcaptcha_form_user_register_form_alter(&$form, &$form_state, $form_i
         '#prefix' => '<div class="ringcaptcha form-wrapper">',
         '#suffix' => '</div>',  
       );      
-      
-      // Add validation TODO
+
+      // Add validation
       $form['#validate'][] = 'ringcaptcha_register_validate';
       $form['#submit'][] = 'ringcaptcha_register_submit';
   } 
-  
-  dpm($form);
-  
 }
 
 /**
@@ -103,10 +104,10 @@ function ringcaptcha_form_user_register_form_alter(&$form, &$form_state, $form_i
 function ringcaptcha_register_validate(&$form, &$form_state) {
   
     if (($library = libraries_load(RINGCAPTCHA_LIBRARY)) && !empty($library['loaded'])) {
-      $appKey = variable_get('ringcaptcha_appkey'); 
-      $secretKey = variable_get('ringcaptcha_secretkey');
+      $appkey = variable_get('ringcaptcha_appkey'); 
+      $secretkey = variable_get('ringcaptcha_secretkey');
       
-      $ringcaptcha = new Ringcaptcha($appKey, $secretKey);
+      $ringcaptcha = new Ringcaptcha($appkey, $secretkey);
       
       if (variable_get('ringcaptcha_require_ssl') === 1) {
          $require_ssl = TRUE; 
@@ -117,10 +118,10 @@ function ringcaptcha_register_validate(&$form, &$form_state) {
       
       $ringcaptcha->setSecure($require_ssl);
 
-      $ringcaptchaPinCode = $_POST["ringcaptcha_pin_code"];
-      $ringcaptchaToken   = $_POST["ringcaptcha_session_id"];
+      $ringcaptcha_pin_code = $_POST["ringcaptcha_pin_code"];
+      $ringcaptcha_token   = $_POST["ringcaptcha_session_id"];
       
-       if ($ringcaptcha->isValid($ringcaptchaPinCode,  $ringcaptchaToken)) {
+       if ($ringcaptcha->isValid($ringcaptcha_pin_code,  $ringcaptchaoken)) {
          // Successful verification flow.
          $user_phone = $ringcaptcha->getPhoneNumber();  //retrieve phone number
          $geo_located = $ringcaptcha->isGeoLocated(); //retrieve whether its been geo located or not

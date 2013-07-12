@@ -1,6 +1,11 @@
 name = RingCaptcha
 description = Integration of RingCaptcha phone verification for developer into Drupal
 core = 7.x
-package = Custom
+
+files[] = ringcaptcha.module
+files[] = ringcaptcha.install
+files[] = ringcaptcha.admin.inc
 
 dependencies[] = libraries
+
+configure = admin/config/system/ringcaptcha
